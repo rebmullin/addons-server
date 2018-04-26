@@ -1,12 +1,10 @@
 import logging
-import os
 import urlparse
 import random
-import json
 
 from django.conf import settings
 
-from locust import TaskSet, task
+from locust import task
 import lxml.html
 from fxa import oauth as fxa_oauth
 

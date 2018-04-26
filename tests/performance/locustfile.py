@@ -9,10 +9,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 # Now we can load django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
-import olympia.lib.safe_xml
+import olympia.lib.safe_xml  # noqa
 
 from locust import HttpLocust  # noqa
-from locust.log import setup_logging
 
 from behaviors.user import (
     AnonymousUserBehavior,
@@ -21,8 +20,6 @@ from behaviors.user import (
 import helpers  # noqa
 
 logging.Formatter.converter = time.gmtime
-
-setup_logging('DEBUG', None)
 
 helpers.install_event_markers()
 
