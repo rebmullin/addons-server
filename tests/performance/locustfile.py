@@ -30,13 +30,10 @@ helpers.install_event_markers()
 class AnonymousUser(HttpLocust):
     task_set = AnonymousUserBehavior
     min_wait = 5000
-    max_wait = 9000
-
-    def __init__(self):
-        super(AnonymousUser, self).__init__()
+    max_wait = 15000
 
 
 class RegisteredUserBehavior(HttpLocust):
     task_set = RegisteredUserBehavior
     min_wait = 5000
-    max_wait = 9000
+    max_wait = 15000

@@ -2,6 +2,7 @@ import logging
 import os
 import urlparse
 import random
+import json
 
 from django.conf import settings
 
@@ -28,6 +29,7 @@ class AnonymousUserBehavior(BaseBehavior):
             allow_redirects=False, catch_response=True)
 
         if response.status_code == 200:
+            response.success()
             html = lxml.html.fromstring(response.content)
             addon_links = html.cssselect('.item.addon h3 a')
             url = random.choice(addon_links).get('href')
@@ -37,6 +39,17 @@ class AnonymousUserBehavior(BaseBehavior):
         else:
             response.failure('Unexpected status code {}'.format(
                 response.status_code))
+
+    @task(10)
+    def search(self):
+        response = self.client.get('/api/v3/addons/search/')
+
+        check_next_url = random.choice((True, False))
+
+        if check_next_url:
+            next_url = response.json()['next']
+            if next_url:
+                self.client.get(next_url)
 
 
 class RegisteredUserBehavior(BaseBehavior):
@@ -59,7 +72,7 @@ class RegisteredUserBehavior(BaseBehavior):
         self.login(self.fxa_account)
 
         form = self.load_upload_form()
-        if form:
+        if form is not None:
             self.upload_addon(form)
 
         self.logout(self.fxa_account)
@@ -109,6 +122,7 @@ class RegisteredUserBehavior(BaseBehavior):
             url, allow_redirects=False, catch_response=True)
 
         if response.status_code == 200:
+            response.success()
             html = lxml.html.fromstring(response.content)
             return html.get_element_by_id('create-addon')
         else:
@@ -125,15 +139,14 @@ class RegisteredUserBehavior(BaseBehavior):
 
         with helpers.get_xpi() as addon_file:
             response = self.client.post(
-                '/developers/upload/',
+                '/en-US/developers/upload',
                 {'csrfmiddlewaretoken': csrfmiddlewaretoken},
                 files={'upload': addon_file},
-                name='devhub.upload {}'.format(
-                    os.path.basename(addon_file.name)),
                 allow_redirects=False,
                 catch_response=True)
 
             if response.status_code == 302:
+                response.success()
                 poll_url = response.headers['location']
                 upload_uuid = self.poll_upload_until_ready(poll_url)
                 if upload_uuid:
@@ -142,4 +155,3 @@ class RegisteredUserBehavior(BaseBehavior):
             else:
                 response.failure('Unexpected status: {}'.format(
                     response.status_code))
-
